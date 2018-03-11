@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 
 
 def break_labelprop():
-    """Constructs an artificial dataset that will break the 
-    labelpropagation algorithm, 
+    """Constructs an artificial dataset that will break the
+    labelpropagation algorithm,
     but will make the self-training a success"""
     x1 = np.random.randint(0, 100, 200)
     x2 = np.random.randint(0, 2, 200)
@@ -35,12 +35,31 @@ def break_labelprop():
 
 
 def break_self_training():
-    """Constructs an artificial dataset that will break the 
-    labelpropagation algorithm, 
-    but will make the self-training a success"""
+    """Constructs an artificial dataset that will break the
+    self-training algorithm,
+    but will make the labelpropagation a success"""
+    mean1 = np.array([-6, 1])
+    mean2 = np.array([5, 7])
+
+    cov = np.array([[5, 0], [0, 12]])
+
+    class1 = np.random.multivariate_normal(mean1, cov, 1000)
+    class2 = np.random.multivariate_normal(mean2, cov, 1000)
+
+    fig, ax = plt.subplots()
+    ax.scatter(class1[:, 0], class1[:, 1])
+    ax.scatter(class2[:, 0], class2[:, 1])
+    ax.legend(['Class 0', 'Class 1'])
+    ax.set_xlabel('Feature 1')
+    ax.set_ylabel('Feature 2')
+
+    plt.savefig('../../Reports/2/figures/break_self_training.eps', dpi=300)
+    plt.show()
+
 
 def main():
     break_labelprop()
+    break_self_training()
 
 
 if __name__ == '__main__':
