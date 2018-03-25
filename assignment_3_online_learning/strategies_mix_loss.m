@@ -1,20 +1,36 @@
 clear all;
 close all;
 
-losses = [0, 0, 1, 0; 0.1, 0, 0, 0.9; 0.2, 0.1, 0, 0];
-T = length(losses) + 1;
+mix_loss = @(p_t, z_t) -log(sum(p_t .* exp(-z_t)));
+
+adv_moves = [0, 0, 1, 0; 0.1, 0, 0, 0.9; 0.2, 0.1, 0, 0];
+T = length(adv_moves);
 d = 3;
+
+experts = eye(d);
 
 % Strategy A - trust current most accurate expert
 % Initialize variables
 p_A = zeros(d, T);
 p_A(:,1) = [1/3, 1/3, 1/3]';
 
+losses_A = zeros(T, 1);
+losses_A(1) = mix_loss(p_A(:,1), adv_moves(:,1));
+
+expert_losses = zeros(d,T);
+for i = 1:d
+    expert_losses(i,1) = mix_loss(experts(:,i), adv_moves(:,1));
+end
+
 % Calculate decision for every time step
 for t = 2:T
-    cum_loss = sum(losses(:,1:t-1), 2);
-    [~, i] = min(cum_loss);
+    exp_cum_loss = sum(expert_losses(:,1:t-1), 2);
+    [~, i] = min(exp_cum_loss);
     p_A(i, t) = 1;
+    losses_A(t) = mix_loss(p_A(:,t), adv_moves(:,t));
+    for i = 1:d
+        expert_losses(i,t) = mix_loss(experts(:,i), adv_moves(:,t));
+    end
 end
 print_matrix(p_A, 't', 'p', 'Decisions from strategy A:');
 
@@ -27,25 +43,24 @@ weights(:,1) = [1, 1, 1]';
 p_B = zeros(d, T);
 p_B(:,1) = [1/3, 1/3, 1/3]';
 
+losses_B = zeros(T,1);
+losses_B(1) = mix_loss(p_B(:,1), adv_moves(:,1));
+
 % Calculate decision for every time step
 for t = 2:T
-    weights(:, t) = weights(:, t-1) .* exp(-eta .* losses(:,t-1));
+    weights(:, t) = weights(:, t-1) .* exp(-eta .* adv_moves(:,t-1));
     p_B(:, t) = weights(:, t) ./ sum(weights(:,t));
+    losses_B(t) = mix_loss(p_B(:,t), adv_moves(:,1));
 end
 
 print_matrix(p_B, 't', 'p', 'Decisions from strategy B:');
 
 % Calculate cumulative losses
-cum_loss_A = 0;
-cum_loss_B = 0;
-
-for i = 1:T-1
-    cum_loss_A = cum_loss_A + p_A(:,i)' * losses(:,i);
-    cum_loss_B = cum_loss_B + p_B(:,i)' * losses(:,i);
-end
+cum_loss_A = sum(losses_A);
+cum_loss_B = sum(losses_B);
 
 % Find and compare to the best expert to get expert regret
-best_expert = min(sum(losses, 2));
+best_expert = min(exp_cum_loss);
 expert_regret_A = cum_loss_A - best_expert;
 expert_regret_B = cum_loss_B - best_expert;
 
