@@ -5,18 +5,21 @@ load coin_data;
 d = 5;
 n = 213;
 
-% compute adversary movez z_t
+% compute adversary moves z_t
 %%% your code here %%%
 z = -log(r);
 
 % compute strategy p_t (see slides)
 %%% your code here %%%
+
+% Initialize strategy
 p = zeros(n, d);
 p(1,:) = ones(1,d) .* (1/d);
 
 weights = zeros(n, d);
 weights(1,:) = ones(1,d);
 
+% Compute strategy for every timestep
 for t = 2:n
     weights(t,:) = weights(t-1,:) .* exp(-z(t-1,:));
     p(t,:) = weights(t,:) ./ sum(weights(t,:)); 
@@ -25,9 +28,12 @@ end
 % compute loss of strategy p_t
 %%% your code here %%%
 losses = -log(sum(p.*exp(-z), 2));
+total_AA_loss = sum(losses);
+fprintf('Total loss of aggregating algorithm: %.4f\n', total_AA_loss);
 
 % compute losses of experts
 %%% your code here %%%
+
 experts = eye(d);
 expert_losses = zeros(n,d);
 for i = 1:n
@@ -44,7 +50,7 @@ end
 
 % compute regret
 %%% your code here %%%
-regret = sum(losses) - min(total_expert_losses);
+regret = total_AA_loss - min(total_expert_losses);
 fprintf(...
     'Expert regret of aggregating algorithm: %.4f (bound: %.4f)\n',...
     regret, log(d)...
@@ -52,10 +58,7 @@ fprintf(...
 
 % compute total gain of investing with strategy p_t
 %%% your code here %%%
-gain = 1;
-for i = 1:n
-    gain = gain * (p(i,:) * r(i,:)');
-end
+gain = exp(-total_AA_loss);
 
 fprintf('Total gain of aggregating algorithm: %.4f\n', gain);
 %% plot of the strategy p and the coin data

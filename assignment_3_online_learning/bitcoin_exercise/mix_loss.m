@@ -8,5 +8,6 @@ function [l, g] = mix_loss(a, r)
 %       g (column vector), the gradient of the mix loss (with respect to action a)
 
     %%% your code here %%%
-
+    l = -log(a' * r);
+    g = -r / (a' * r);
 end
